@@ -466,13 +466,29 @@ static void MX_GPIO_Init(void)
 void BlinkTask(void const *argument)
 {
 	volatile int idx;
+	int i;
 	if(osSemaphoreWait(semHandle, osWaitForever) == osOK) {
 
 		for(;;)
 		{
-			GPIOA->ODR ^= GPIO_PIN_10;
+			//Configure 0
+			GPIOA->ODR |=  GPIO_PIN_10;
+			for (i=0; i < 10; i++) {idx=i;}
+			GPIOA->ODR &= ~GPIO_PIN_10;
+			for (i=0; i < 30; i++) {idx=i;}
+			//configure 1
+			GPIOA->ODR |=  GPIO_PIN_10;
+			for (i=0; i < 30; i++) {idx=i;}
+			GPIOA->ODR &= ~GPIO_PIN_10;
+			for (i=0; i < 10; i++) {idx=i;}
+			//Configure 0
+			GPIOA->ODR |=  GPIO_PIN_10;
+			for (i=0; i < 10; i++) {idx=i;}
+			GPIOA->ODR &= ~GPIO_PIN_10;
+			for (i=0; i < 30; i++) {idx=i;}
 			//idx=1;
 			//osDelay(5);
+			osThreadTerminate(NULL);
 		}
 	}
 }
