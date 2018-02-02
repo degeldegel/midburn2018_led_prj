@@ -50,7 +50,7 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "cmsis_os.h"
-
+#include "ws2812b_multi_strip_driver.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -69,7 +69,7 @@ osThreadId defaultTaskHandle;
 /* Private variables ---------------------------------------------------------*/
 osThreadId blinkTaskHandle;
 osSemaphoreId semHandle;
-
+extern uint8_t LED_strips[MAX_SUPPORTED_NUM_OF_STRIPS][MAX_SUPPORTED_LEDS_IN_STRIP][NUM_OF_CFG_BYTES_PER_LED];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -466,30 +466,87 @@ static void MX_GPIO_Init(void)
 void BlinkTask(void const *argument)
 {
 	volatile int idx;
-	int i;
-	if(osSemaphoreWait(semHandle, osWaitForever) == osOK) {
+	volatile int i,dummy;
 
-		for(;;)
+	if (osSemaphoreWait(semHandle, osWaitForever) == osOK) {
+		LD2_GPIO_Port->ODR |= LD2_Pin;
+		for (i=0; i<MAX_LEDS_IN_STRIP; i++)
 		{
-			//Configure 0
-			GPIOA->ODR |=  GPIO_PIN_10;
-			for (i=0; i < 10; i++) {idx=i;}
-			GPIOA->ODR &= ~GPIO_PIN_10;
-			for (i=0; i < 30; i++) {idx=i;}
-			//configure 1
-			GPIOA->ODR |=  GPIO_PIN_10;
-			for (i=0; i < 30; i++) {idx=i;}
-			GPIOA->ODR &= ~GPIO_PIN_10;
-			for (i=0; i < 10; i++) {idx=i;}
-			//Configure 0
-			GPIOA->ODR |=  GPIO_PIN_10;
-			for (i=0; i < 10; i++) {idx=i;}
-			GPIOA->ODR &= ~GPIO_PIN_10;
-			for (i=0; i < 30; i++) {idx=i;}
-			//idx=1;
-			//osDelay(5);
-			osThreadTerminate(NULL);
+			LED_strips[0][i][0] = 0;
+			LED_strips[0][i][1] = 0;
+			LED_strips[0][i][2] = 0;
+			LED_strips[1][i][0] = 255;
+			LED_strips[1][i][1] = 0;
+			LED_strips[1][i][2] = 0;
+			LED_strips[2][i][0] = 0;
+			LED_strips[2][i][1] = 255;
+			LED_strips[2][i][2] = 0;
+			LED_strips[3][i][0] = 0;
+			LED_strips[3][i][1] = 0;
+			LED_strips[3][i][2] = 255;
+			LED_strips[4][i][0] = 200;
+			LED_strips[4][i][1] = 0;
+			LED_strips[4][i][2] = 200;
+			LED_strips[5][i][0] = 200;
+			LED_strips[5][i][1] = 100;
+			LED_strips[5][i][2] = 0;
+			LED_strips[6][i][0] = 0;
+			LED_strips[6][i][1] = 100;
+			LED_strips[6][i][2] = 200;
+
 		}
+		for (;;)
+		{
+			update_GPIO_all_strips_mask(GPIO_PIN_10);
+			update_driver_mask(0);
+			drive_port_strips();
+			osDelay(1000);
+			update_driver_mask(1);
+			drive_port_strips();
+			osDelay(1000);
+			update_driver_mask(2);
+			drive_port_strips();
+			osDelay(1000);
+			update_driver_mask(3);
+			drive_port_strips();
+			osDelay(1000);
+			update_driver_mask(4);
+			drive_port_strips();
+			osDelay(1000);
+			update_driver_mask(5);
+			drive_port_strips();
+			osDelay(1000);
+			update_driver_mask(6);
+			drive_port_strips();
+			osDelay(1000);
+
+
+			//GPIOA->ODR |= GPIO_PIN_10;
+			/*for (idx=0; idx < 16; idx++)
+			{
+				//Configure 0
+				GPIOA->ODR |=  GPIO_PIN_10;
+				for (i=0; i < 5; i++) {dummy=i;}
+				GPIOA->ODR &= ~GPIO_PIN_10;
+				for (i=0; i < 15; i++) {dummy=i;}
+			}
+			for (idx=0; idx < 8; idx++)
+			{
+				//configure 1
+				GPIOA->ODR |=  GPIO_PIN_10;
+				for (i=0; i < 15; i++) {dummy=i;}
+				GPIOA->ODR &= ~GPIO_PIN_10;
+				for (i=0; i < 5; i++) {dummy=i;}
+			}*/
+			//Configure 0
+/*			GPIOA->ODR |=  GPIO_PIN_10;
+			for (i=0; i < 10; i++) {idx=i;}
+			GPIOA->ODR &= ~GPIO_PIN_10;
+			for (i=0; i < 30; i++) {idx=i;}*/
+			//idx=1;
+
+		}
+		osThreadTerminate(NULL);
 	}
 }
 
