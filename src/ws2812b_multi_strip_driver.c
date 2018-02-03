@@ -11,7 +11,7 @@ void drive_port_strips(void)
 	volatile int idx;
 	int i, curr_led_bit_idx;
 	uint16_t curr_zero_mask;
-
+	SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
 	for (curr_led_bit_idx=0; curr_led_bit_idx < MAX_LEDS_IN_STRIP * BITS_TO_CONFIGURE_ONE_LED; curr_led_bit_idx++)
 	{
 		//raise all Strips up
@@ -26,8 +26,9 @@ void drive_port_strips(void)
 		//lower all strips with bit value zero
 		GPIOB->ODR &= ~(curr_zero_mask ^ GPIO_all_strips_mask);
 		//finish bit configuration cycle ~1.25 msec
-		for (i=0; i < 9; i++) {idx=i;}
+		for (i=0; i < 8; i++) {idx=i;}
 	}
+	SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
 }
 
 void update_GPIO_all_strips_mask(uint16_t update_mask)

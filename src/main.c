@@ -146,7 +146,7 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(blinkTask, BlinkTask, osPriorityNormal, 0, 128);
+  osThreadDef(blinkTask, BlinkTask, osPriorityRealtime, 0, 128);
   blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
   osSemaphoreDef(sem);
   semHandle = osSemaphoreCreate(osSemaphore(sem), 1);
@@ -463,18 +463,111 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void disableAllIRQs(void)
+{
+	/******  STM32 specific Interrupt Numbers **********************************************************************/
+	  NVIC_DisableIRQ(WWDG_IRQn              );
+	  NVIC_DisableIRQ(PVD_IRQn               );
+	  NVIC_DisableIRQ(TAMP_STAMP_IRQn        );
+	  NVIC_DisableIRQ(RTC_WKUP_IRQn          );
+	  NVIC_DisableIRQ(FLASH_IRQn             );
+	  NVIC_DisableIRQ(RCC_IRQn               );
+	  NVIC_DisableIRQ(EXTI0_IRQn             );
+	  NVIC_DisableIRQ(EXTI1_IRQn             );
+	  NVIC_DisableIRQ(EXTI2_IRQn             );
+	  NVIC_DisableIRQ(EXTI3_IRQn             );
+	  NVIC_DisableIRQ(EXTI4_IRQn             );
+	  NVIC_DisableIRQ(DMA1_Stream0_IRQn      );
+	  NVIC_DisableIRQ(DMA1_Stream1_IRQn      );
+	  NVIC_DisableIRQ(DMA1_Stream2_IRQn      );
+	  NVIC_DisableIRQ(DMA1_Stream3_IRQn      );
+	  NVIC_DisableIRQ(DMA1_Stream4_IRQn      );
+	  NVIC_DisableIRQ(DMA1_Stream5_IRQn      );
+	  NVIC_DisableIRQ(DMA1_Stream6_IRQn      );
+	  NVIC_DisableIRQ(ADC_IRQn               );
+	  NVIC_DisableIRQ(CAN1_TX_IRQn           );
+	  NVIC_DisableIRQ(CAN1_RX0_IRQn          );
+	  NVIC_DisableIRQ(CAN1_RX1_IRQn          );
+	  NVIC_DisableIRQ(CAN1_SCE_IRQn          );
+	  NVIC_DisableIRQ(EXTI9_5_IRQn           );
+	  NVIC_DisableIRQ(TIM1_BRK_TIM9_IRQn     );
+	  NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn     );
+	  NVIC_DisableIRQ(TIM1_TRG_COM_TIM11_IRQn);
+	  NVIC_DisableIRQ(TIM1_CC_IRQn           );
+	  NVIC_DisableIRQ(TIM2_IRQn              );
+	  NVIC_DisableIRQ(TIM3_IRQn              );
+	  NVIC_DisableIRQ(TIM4_IRQn              );
+	  NVIC_DisableIRQ(I2C1_EV_IRQn           );
+	  NVIC_DisableIRQ(I2C1_ER_IRQn           );
+	  NVIC_DisableIRQ(I2C2_EV_IRQn           );
+	  NVIC_DisableIRQ(I2C2_ER_IRQn           );
+	  NVIC_DisableIRQ(SPI1_IRQn              );
+	  NVIC_DisableIRQ(SPI2_IRQn              );
+	  NVIC_DisableIRQ(USART1_IRQn            );
+	  NVIC_DisableIRQ(USART2_IRQn            );
+	  NVIC_DisableIRQ(USART3_IRQn            );
+	  NVIC_DisableIRQ(EXTI15_10_IRQn         );
+	  NVIC_DisableIRQ(RTC_Alarm_IRQn         );
+	  NVIC_DisableIRQ(OTG_FS_WKUP_IRQn       );
+	  NVIC_DisableIRQ(TIM8_BRK_TIM12_IRQn    );
+	  NVIC_DisableIRQ(TIM8_UP_TIM13_IRQn     );
+	  NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn);
+	  NVIC_DisableIRQ(TIM8_CC_IRQn           );
+	  NVIC_DisableIRQ(DMA1_Stream7_IRQn      );
+	  NVIC_DisableIRQ(FMC_IRQn               );
+	  NVIC_DisableIRQ(SDIO_IRQn              );
+	  NVIC_DisableIRQ(TIM5_IRQn              );
+	  NVIC_DisableIRQ(SPI3_IRQn              );
+	  NVIC_DisableIRQ(UART4_IRQn             );
+	  NVIC_DisableIRQ(UART5_IRQn             );
+	  NVIC_DisableIRQ(TIM6_DAC_IRQn          );
+	  NVIC_DisableIRQ(TIM7_IRQn              );
+	  NVIC_DisableIRQ(DMA2_Stream0_IRQn      );
+	  NVIC_DisableIRQ(DMA2_Stream1_IRQn      );
+	  NVIC_DisableIRQ(DMA2_Stream2_IRQn      );
+	  NVIC_DisableIRQ(DMA2_Stream3_IRQn      );
+	  NVIC_DisableIRQ(DMA2_Stream4_IRQn      );
+	  NVIC_DisableIRQ(CAN2_TX_IRQn           );
+	  NVIC_DisableIRQ(CAN2_RX0_IRQn          );
+	  NVIC_DisableIRQ(CAN2_RX1_IRQn          );
+	  NVIC_DisableIRQ(CAN2_SCE_IRQn          );
+	  NVIC_DisableIRQ(OTG_FS_IRQn            );
+	  NVIC_DisableIRQ(DMA2_Stream5_IRQn      );
+	  NVIC_DisableIRQ(DMA2_Stream6_IRQn      );
+	  NVIC_DisableIRQ(DMA2_Stream7_IRQn      );
+	  NVIC_DisableIRQ(USART6_IRQn            );
+	  NVIC_DisableIRQ(I2C3_EV_IRQn           );
+	  NVIC_DisableIRQ(I2C3_ER_IRQn           );
+	  NVIC_DisableIRQ(OTG_HS_EP1_OUT_IRQn    );
+	  NVIC_DisableIRQ(OTG_HS_EP1_IN_IRQn     );
+	  NVIC_DisableIRQ(OTG_HS_WKUP_IRQn       );
+	  NVIC_DisableIRQ(OTG_HS_IRQn            );
+	  NVIC_DisableIRQ(DCMI_IRQn              );
+	  NVIC_DisableIRQ(FPU_IRQn               );
+	  NVIC_DisableIRQ(SPI4_IRQn              );
+	  NVIC_DisableIRQ(SAI1_IRQn              );
+	  NVIC_DisableIRQ(SAI2_IRQn              );
+	  NVIC_DisableIRQ(QUADSPI_IRQn           );
+	  NVIC_DisableIRQ(CEC_IRQn               );
+	  NVIC_DisableIRQ(SPDIF_RX_IRQn          );
+	  NVIC_DisableIRQ(FMPI2C1_EV_IRQn        );
+	  NVIC_DisableIRQ(FMPI2C1_ER_IRQn        );
+}
+
 void BlinkTask(void const *argument)
 {
 	volatile int idx;
 	volatile int i,dummy;
 
-	if (osSemaphoreWait(semHandle, osWaitForever) == osOK) {
+	if (osSemaphoreWait(semHandle, osWaitForever) == osOK)
+	{
+		//disableAllIRQs();
 		LD2_GPIO_Port->ODR |= LD2_Pin;
 		for (i=0; i<MAX_LEDS_IN_STRIP; i++)
 		{
-			LED_strips[0][i][0] = 0;
-			LED_strips[0][i][1] = 0;
-			LED_strips[0][i][2] = 0;
+			LED_strips[0][i][0] = 250;
+			LED_strips[0][i][1] = 250;
+			LED_strips[0][i][2] = 250;
 			LED_strips[1][i][0] = 255;
 			LED_strips[1][i][1] = 0;
 			LED_strips[1][i][2] = 0;
@@ -500,25 +593,25 @@ void BlinkTask(void const *argument)
 			update_GPIO_all_strips_mask(GPIO_PIN_10);
 			update_driver_mask(0);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 			update_driver_mask(1);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 			update_driver_mask(2);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 			update_driver_mask(3);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 			update_driver_mask(4);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 			update_driver_mask(5);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 			update_driver_mask(6);
 			drive_port_strips();
-			osDelay(1000);
+			osDelay(100);
 
 
 			//GPIOA->ODR |= GPIO_PIN_10;
