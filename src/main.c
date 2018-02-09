@@ -68,6 +68,9 @@ osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 osThreadId blinkTaskHandle;
+osThreadId snakeTaskHandle;
+osThreadId starTaskHandle;
+osThreadId breatheTaskHandle;
 osSemaphoreId semHandle;
 extern uint8_t LED_strips[MAX_SUPPORTED_NUM_OF_STRIPS][MAX_SUPPORTED_LEDS_IN_STRIP][NUM_OF_CFG_BYTES_PER_LED];
 /* USER CODE END PV */
@@ -86,6 +89,10 @@ void StartDefaultTask(void const * argument);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 void BlinkTask(void const * argument);
+void SnakeTask(void const * argument);
+void StarTask(void const *argument);
+void BreatheTask(void const *argument);
+
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -146,8 +153,20 @@ int main(void)
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(blinkTask, BlinkTask, osPriorityRealtime, 0, 128);
-  blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
+  /*BLINK TASK*/
+  //osThreadDef(blinkTask, BlinkTask, osPriorityRealtime, 0, 128);
+  //blinkTaskHandle = osThreadCreate(osThread(blinkTask), NULL);
+  /*SNAKE TASK*/
+  //osThreadDef(snakeTask, SnakeTask, osPriorityRealtime, 0, 128);
+  //snakeTaskHandle = osThreadCreate(osThread(snakeTask), NULL);
+  /*STAR TASK*/
+  //osThreadDef(starTask, StarTask, osPriorityRealtime, 0, 128);
+  //starTaskHandle = osThreadCreate(osThread(starTask), NULL);
+  /*BREATHE TASK*/
+  osThreadDef(breatheTask, BreatheTask, osPriorityRealtime, 0, 128);
+  breatheTaskHandle = osThreadCreate(osThread(breatheTask), NULL);
+
+
   osSemaphoreDef(sem);
   semHandle = osSemaphoreCreate(osSemaphore(sem), 1);
   osSemaphoreWait(semHandle, osWaitForever);
@@ -612,31 +631,133 @@ void BlinkTask(void const *argument)
 			update_driver_mask(6);
 			drive_port_strips();
 			osDelay(100);
+		}
+		osThreadTerminate(NULL);
+	}
+}
 
+void SnakeTask(void const *argument)
+{
+	volatile int idx;
+	volatile int led_id, strip_id;
 
-			//GPIOA->ODR |= GPIO_PIN_10;
-			/*for (idx=0; idx < 16; idx++)
+	if (osSemaphoreWait(semHandle, osWaitForever) == osOK)
+	{
+		uint32_t cycle_cntr=0;
+		LD2_GPIO_Port->ODR |= LD2_Pin;
+		for (;;)
+		{
+			for (strip_id=0; strip_id < MAX_ACTIVE_STRIPS; strip_id++)
 			{
-				//Configure 0
-				GPIOA->ODR |=  GPIO_PIN_10;
-				for (i=0; i < 5; i++) {dummy=i;}
-				GPIOA->ODR &= ~GPIO_PIN_10;
-				for (i=0; i < 15; i++) {dummy=i;}
+				for (led_id=(MAX_LEDS_IN_STRIP-1); led_id!=0; led_id--)
+				{
+					LED_strips[strip_id][led_id][0] = LED_strips[0][led_id-1][0];
+					LED_strips[strip_id][led_id][1] = LED_strips[0][led_id-1][1];
+					LED_strips[strip_id][led_id][2] = LED_strips[0][led_id-1][2];
+				}
 			}
-			for (idx=0; idx < 8; idx++)
+			if ((cycle_cntr%15)<8)
 			{
-				//configure 1
-				GPIOA->ODR |=  GPIO_PIN_10;
-				for (i=0; i < 15; i++) {dummy=i;}
-				GPIOA->ODR &= ~GPIO_PIN_10;
-				for (i=0; i < 5; i++) {dummy=i;}
-			}*/
-			//Configure 0
-/*			GPIOA->ODR |=  GPIO_PIN_10;
-			for (i=0; i < 10; i++) {idx=i;}
-			GPIOA->ODR &= ~GPIO_PIN_10;
-			for (i=0; i < 30; i++) {idx=i;}*/
-			//idx=1;
+				uint8_t power = ((cycle_cntr%15 == 0) || (cycle_cntr%15 == 7)) ? 1 :
+								((cycle_cntr%15 == 1) || (cycle_cntr%15 == 6)) ? 5 : 50;
+				for (strip_id=0; strip_id < MAX_ACTIVE_STRIPS; strip_id++)
+				{
+					if ((cycle_cntr%45) < 15)
+					{
+						LED_strips[led_id][0][GREEN] = power;
+						LED_strips[led_id][0][RED]   = 0;
+						LED_strips[led_id][0][BLUE]  = 0;
+					}
+					else if ((cycle_cntr%45) < 30)
+					{
+						LED_strips[led_id][0][GREEN] = 0;
+						LED_strips[led_id][0][RED]   = power;
+						LED_strips[led_id][0][BLUE]  = 0;
+					}
+					else
+					{
+						LED_strips[led_id][0][GREEN] = 0;
+						LED_strips[led_id][0][RED]   = 0;
+						LED_strips[led_id][0][BLUE]  = power;
+					}
+				}
+			}
+			else
+			{
+				for (strip_id=0; strip_id < MAX_ACTIVE_STRIPS; strip_id++)
+				{
+					LED_strips[led_id][0][GREEN] = 0;
+					LED_strips[led_id][0][RED] = 0;
+					LED_strips[led_id][0][BLUE] = 0;
+				}
+			}
+			update_GPIO_all_strips_mask(GPIO_PIN_10 | GPIO_PIN_5 | GPIO_PIN_6);
+			update_driver_mask(GPIOB_PORT);
+			drive_port_strips();
+			osDelay(50);
+			cycle_cntr++;
+		}
+		osThreadTerminate(NULL);
+	}
+}
+
+void StarTask(void const *argument)
+{
+	osThreadTerminate(NULL);
+}
+
+void BreatheTask(void const *argument)
+{
+	#define POWER_STEPS 25
+	volatile int power_idx, strip_id, led_id;
+
+	if (osSemaphoreWait(semHandle, osWaitForever) == osOK)
+	{
+		LD2_GPIO_Port->ODR |= LD2_Pin;
+		for (;;)
+		{
+			for (power_idx=1; power_idx<POWER_STEPS; power_idx++)
+			{
+				for (strip_id=0; strip_id < MAX_ACTIVE_STRIPS; strip_id++)
+				{
+					uint8_t g_pwr, r_pwr, b_pwr;
+					g_pwr = strip_id==0 ? power_idx*2 : 0;
+					r_pwr = strip_id==1 ? power_idx*2 : 0;
+					b_pwr = strip_id==2 ? power_idx*2 : 0;
+					for (led_id=0; led_id<MAX_LEDS_IN_STRIP; led_id++)
+					{
+						LED_strips[strip_id][led_id][GREEN] = g_pwr;
+						LED_strips[strip_id][led_id][RED]   = r_pwr;
+						LED_strips[strip_id][led_id][BLUE]  = b_pwr;
+					}
+				}
+				update_GPIO_all_strips_mask(GPIO_PIN_10 | GPIO_PIN_5 | GPIO_PIN_6);
+				update_driver_mask(GPIOB_PORT);
+				drive_port_strips();
+				osDelay(20);
+			}
+			for (power_idx=POWER_STEPS; power_idx>0; power_idx--)
+			{
+				for (strip_id=0; strip_id < MAX_ACTIVE_STRIPS; strip_id++)
+				{
+					uint8_t g_pwr, r_pwr, b_pwr;
+					g_pwr = strip_id==0 ? power_idx*2 : 0;
+					r_pwr = strip_id==1 ? power_idx*2 : 0;
+					b_pwr = strip_id==2 ? power_idx*2 : 0;
+
+					for (led_id=0; led_id<MAX_LEDS_IN_STRIP; led_id++)
+					{
+						LED_strips[strip_id][led_id][GREEN] = g_pwr;
+						LED_strips[strip_id][led_id][RED]   = r_pwr;
+						LED_strips[strip_id][led_id][BLUE]  = b_pwr;
+
+					}
+				}
+				update_GPIO_all_strips_mask(GPIO_PIN_10 | GPIO_PIN_5 | GPIO_PIN_6);
+				update_driver_mask(GPIOB_PORT);
+				drive_port_strips();
+				osDelay(20);
+			}
 
 		}
 		osThreadTerminate(NULL);
